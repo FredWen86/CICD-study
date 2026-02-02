@@ -2,6 +2,10 @@
 
 这是一个用于系统练习 **Docker / Docker Compose / CI / CD** 的示例仓库（练习栈：**Python + FastAPI**，CI 平台：**GitHub Actions**）。
 
+## 文档（按 Part 阅读）
+
+- [docs/README.md](./docs/README.md)
+
 ## 本地开发（不使用 Docker）
 
 - **安装依赖**：

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+import os
 import asyncpg
 import redis.asyncio as redis
 from fastapi import FastAPI

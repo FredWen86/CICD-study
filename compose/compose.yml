@@ -1,0 +1,48 @@
+name: cicd-study
+
+services:
+  api:
+    image: "${IMAGE_NAME:-cicd-study-api}:${IMAGE_TAG:-local}"
+    environment:
+      ENVIRONMENT: "${ENVIRONMENT:-dev}"
+      POSTGRES_DSN: "${POSTGRES_DSN:-}"
+      REDIS_URL: "${REDIS_URL:-}"
+      PORT: "8000"
+    ports:
+      - "${API_PORT:-18000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/docker/healthcheck.py"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: "postgres:16-alpine"
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-app}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-app}"
+      POSTGRES_DB: "${POSTGRES_DB:-app}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: "redis:7-alpine"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:

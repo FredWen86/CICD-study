@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+
+# 环境变量文件（可能包含敏感信息）
+.env
+.env.*
+# 允许提交示例文件（用于本地快速复制）
+!.env.example
+!**/.env.example
+
+dist/
+build/
+*.egg-info/
+
+.DS_Store

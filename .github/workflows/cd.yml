@@ -1,0 +1,73 @@
+name: cd
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add deploy host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+
+      - name: Prepare prod env file (compose/.env.prod)
+        run: |
+          set -euo pipefail
+
+          API_PORT="${API_PORT:-18000}"
+          POSTGRES_USER="${POSTGRES_USER:-app}"
+          POSTGRES_DB="${POSTGRES_DB:-app}"
+          POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?}"
+
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY}/api"
+          IMAGE_TAG="sha-${GITHUB_SHA}"
+
+          cat > compose/.env.prod <<EOF
+API_PORT=${API_PORT}
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+POSTGRES_DB=${POSTGRES_DB}
+POSTGRES_DSN=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+REDIS_URL=redis://redis:6379/0
+ENVIRONMENT=prod
+IMAGE_NAME=${IMAGE_NAME}
+IMAGE_TAG=${IMAGE_TAG}
+EOF
+
+          echo "INFO: compose/.env.prod created"
+        env:
+          API_PORT: ${{ secrets.API_PORT }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+
+      - name: Deploy (docker compose on host)
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          IMAGE_NAME: ghcr.io/${{ github.repository }}/api
+          IMAGE_TAG: sha-${{ github.sha }}
+

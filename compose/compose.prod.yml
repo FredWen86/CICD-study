@@ -1,0 +1,12 @@
+services:
+  api:
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: "${ENVIRONMENT:-prod}"
+    # 生产环境不挂载源码；镜像即制品
+
+  postgres:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
